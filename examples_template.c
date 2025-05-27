@@ -29,6 +29,11 @@ char pass[9][17] = {"0000"};
 char loginUSERNAMEinput[17] = "";
 char loginPASSWORDinput[17] = "";
 
+int USERNAMEcount = 0;
+int PASSWORDcount = 0;
+
+bool writingInUSERwndw = false;
+bool writingInPASSwndw = false;
 
 // Functions tied to the application
 
@@ -39,10 +44,12 @@ void deleteChars(int bar) {
         case 0:
             len = strlen(loginUSERNAMEinput);
             loginUSERNAMEinput[len - 1] = '\0';  // overwrite last character with null terminator
+            USERNAMEcount--;
             break;        
         case 1:
             len = strlen(loginPASSWORDinput);
             loginPASSWORDinput[len - 1] = '\0';  // overwrite last character with null terminator
+            PASSWORDcount--;
             break;
     }
 
@@ -58,8 +65,6 @@ void deleteChars(int bar) {
 //------------------------------------------------------------------------------------
 int main(void)
 {
-    int usernameLEN = strlen(loginUSERNAMEinput);
-    int passwordLEN = strlen(loginPASSWORDinput);
     // Initialization
     //--------------------------------------------------------------------------------------
     const int screenWidth = 800;
@@ -113,23 +118,21 @@ int main(void)
     float alphaLogin = 0.0f;   
     float alphaLoginLogo = 0.0f;
     float alphaLoginBTN = 1.0f;
-    
+    float alphaUSER = 0.0f;
+    float alphaPASS = 0.0f;
     //--------------------------------------------------------------------------------------
 
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         int pressedKey = GetCharPressed();
+        
         Vector2 MousePos = GetMousePosition();
         bool isHoveringLoginBTN = CheckCollisionPointRec(MousePos, loginBTN);
         bool isHoveringUSERwndw = CheckCollisionPointRec(MousePos, userBLACK);
         bool isHoveringPASSwndw  = CheckCollisionPointRec(MousePos, passBLACK);
         
-        
-        bool writingInUSERwndw = false;
-        
-        
-        
+         
         // IF-s for hovering
         if (isHoveringLoginBTN && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && loginScreen == true) {
             loginScreen = false;
@@ -142,26 +145,24 @@ int main(void)
             SetMouseCursor(MOUSE_CURSOR_DEFAULT);
             alphaLoginBTN = 1.0f;
         }
+
+        int key = GetCharPressed();
+        while (key > 0) {
+            if (writingInUSERwndw && USERNAMEcount < 16) {
+                loginUSERNAMEinput[USERNAMEcount++] = (char)key;
+                loginUSERNAMEinput[USERNAMEcount] = '\0';
+            } else if (writingInPASSwndw && PASSWORDcount < 16) {
+                loginPASSWORDinput[PASSWORDcount++] = (char)key;
+                loginPASSWORDinput[PASSWORDcount] = '\0';
+            }
+        }
+        
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            if (writingInUSERwndw && USERNAMEcount > 0) deleteChars(0);
+            if (writingInPASSwndw && PASSWORDcount > 0) deleteChars(1);
+        }
         
         // Logic
-
-        int i = 0;
-        int j = 0;
-        if (usernameLEN < 16) {
-            loginUSERNAMEinput[i] = (char)pressedKey;
-            i++;
-        } else {
-            loginUSERNAMEinput[usernameLEN - 1] = '\0';
-            i--;
-        }        
-
-        if (passwordLEN < 16) {
-            loginPASSWORDinput[j] = (char)pressedKey;    
-            j++;
-        } else {
-            loginPASSWORDinput[passwordLEN - 1] = '\0';
-            j--;
-        }    
         
         
         // Draw
@@ -171,28 +172,46 @@ int main(void)
             if (loginScreen) {
                 if (alphaLogin < 1) alphaLogin += 0.03f;
                 if (alphaLoginLogo < 0.8) alphaLoginLogo += 0.03f;
+                if (alphaUSER < 1) alphaUSER += 0.03f;
+                if (alphaPASS < 1) alphaPASS += 0.03f;
                 ClearBackground(BLACK);
                 DrawTexture(textureLogin, screenWidth-800, screenHeight-900, Fade(WHITE, 0.5f)); 
                 DrawTextEx(JupiterFont, "CANOE", posCanoeLogin, 150, 25, Fade(WHITE, alphaLogin));  
                 DrawTexture(textureLoginLogo, screenWidth-250, screenHeight-265, Fade(WHITE, alphaLoginLogo));
                 
                 DrawRectangleRec(userBLACK, Fade(BLACK, alphaLogin));
-                DrawRectangle(650, 520, 600, 100, Fade(DARKGRAY, alphaLogin));
+                DrawRectangle(650, 520, 600, 100, Fade(DARKGRAY, alphaUSER));
+                DrawText(loginUSERNAMEinput, 670, 550, 25, Fade(WHITE, alphaLogin));
                 
-                if (isHoveringUSERwndw && (MOUSE_LEFT_BUTTON) && loginScreen == true) {
+                if (isHoveringUSERwndw && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && loginScreen) {
                     writingInUSERwndw = true;
-                    printf("working");
+                    writingInPASSwndw = false;
+                    printf("working user");
                     fflush(stdout);
-                } else if (isHoveringLoginBTN && loginScreen == true) {
+                } else if (isHoveringUSERwndw && loginScreen == true) {
                     SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
-                    alphaLoginBTN = 0.7f;
+                    alphaUSER = 0.7f;
                 } else {
                     SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-                    alphaLoginBTN = 1.0f;
-                }
+                    alphaUSER = 1.0f;
+                }                
                 
                 DrawRectangleRec(passBLACK, Fade(BLACK, alphaLogin));
-                DrawRectangle(650, 680, 600, 100, Fade(DARKGRAY, alphaLogin));
+                DrawRectangle(650, 680, 600, 100, Fade(DARKGRAY, alphaPASS));
+                DrawText(loginPASSWORDinput, 670, 710, 25, Fade(WHITE, alphaLogin));
+                
+                if (isHoveringPASSwndw && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && loginScreen) {
+                    writingInPASSwndw = true;
+                    writingInUSERwndw = false;
+                    printf("working pass");
+                    fflush(stdout);
+                } else if (isHoveringPASSwndw && loginScreen == true) {
+                    SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
+                    alphaPASS = 0.7f;
+                } else {
+                    SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+                    alphaPASS = 1.0f;
+                }
       
                 DrawTexture(textureLoginBTN, screenWidth+15, screenHeight+365, Fade(WHITE, alphaLoginBTN));
                 DrawTextEx(JupiterFont, "Login", posLoginText, 70, 5, Fade(WHITE, alphaLoginBTN)); 
